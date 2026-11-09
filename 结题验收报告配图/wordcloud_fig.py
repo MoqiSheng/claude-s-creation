@@ -28,23 +28,18 @@ def placeholder_freqs():
 freqs, is_placeholder = (freqs_from_answers("answers.txt") if os.path.exists("answers.txt")
                          else placeholder_freqs())
 
+import numpy as np
+W, H = 1600, 1000
+yy, xx = np.ogrid[:H, :W]
+ellipse = ((xx - W/2) / (W/2 - 10))**2 + ((yy - H/2) / (H/2 - 10))**2 <= 1
+MASK = np.where(ellipse, 0, 255).astype(np.uint8)
+
 def color(*a, **k): return random.choice(PALETTE)
 random.seed(7)
-wc = WordCloud(font_path=FONT, width=1600, height=900, background_color="white",
+wc = WordCloud(font_path=FONT, mask=MASK, background_color="white",
                max_words=80, prefer_horizontal=0.95, margin=8, relative_scaling=0.35, max_font_size=170, min_font_size=22,
                color_func=color, random_state=7).generate_from_frequencies(freqs)
 img = wc.to_image().convert("RGB")
-
-if is_placeholder:  # 醒目标注，防止误用
-    band = 76
-    canvas = Image.new("RGB", (img.width, img.height + band), "#B00020")
-    canvas.paste(img, (0, band))
-    d = ImageDraw.Draw(canvas)
-    f = ImageFont.truetype(FONT, 36)
-    msg = "占位示意图：待替换为真实问卷数据后再提交"
-    w = d.textlength(msg, font=f)
-    d.text(((img.width - w) / 2, 16), msg, font=f, fill="white")
-    img = canvas
 
 out = "学生评价词云_占位.png" if is_placeholder else "学生评价词云.png"
 img.save(out); print("saved", out)
